@@ -1,28 +1,41 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
-import { latLng } from "leaflet";
+import { persist } from "zustand/middleware";
 
-const usePinStore = create((set) => ({
-    // The array that will hold all pin objects
-    pins: [
-        // Add our initial Tokyo pin here so it's managed by the store
-        { id: 'initial-1', lat: 35.6895, lng: 139.6917, status: 'Planned' }
-    ],
-
-    // The function to add new pin
-    addPin: (latlng) => {
-        set((state) => ({
+const usePinStore = create(
+    // Wrap the store in persist middleware
+    persist(
+        (set) => ({
             pins: [
-                ...state.pins,
-                {
-                    id: uuidv4(),        // Generate a unique ID
-                    lat: latlng.lat,
-                    lng: latlng.lng,
-                    status: 'Planned',   // Default status for new pins
-                },
             ],
-        }));
-    },
-}));
+            addPin: (latlng) => {
+                set((state) => ({
+                    pins: [
+                        ...state.pins,
+                        {
+                            id: uuidv4(),
+                            lat: latlng.lat,
+                            lng: latlng.lng,
+                            status: 'Planned',  // Default status
+                        },
+                    ],
+                }));
+            },
+            // Add a function to toggle the status
+            togglePinStatus: (id) => {
+                set((state) => ({
+                    pins: state.pins.map((pin) =>
+                        pin.id === id
+                            ? { ...pin, status: pin.status === 'Planned' ? 'Visited' : 'Planned' }
+                            : pin
+                    ),
+                }));
+            },
+        }),
+        {
+            name: 'japan-trip-storage',   // key to use in localStorage
+        }
+    )
+);
 
 export default usePinStore;
